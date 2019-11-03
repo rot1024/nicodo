@@ -18,4 +18,11 @@ impl Session {
       client: reqwest::Client::new(),
     }
   }
+
+  pub(crate) fn get<U: reqwest::IntoUrl>(&self, url: U) -> reqwest::RequestBuilder {
+    self
+      .client
+      .get(url)
+      .header(reqwest::header::COOKIE, &self.cookie)
+  }
 }

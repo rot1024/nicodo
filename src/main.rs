@@ -62,8 +62,9 @@ async fn main2() -> error::Result<()> {
     .await?;
 
     let info = session.get_info(matcher.value_of("id").unwrap()).await?;
+    let comments = session.get_comments(&info).await?;
 
-    println!("{:?}", info);
+    println!("{:?}", comments);
 
     Ok(())
 }

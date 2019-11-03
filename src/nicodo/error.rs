@@ -8,6 +8,10 @@ pub enum Error {
   InvalidWatchPage,
   #[fail(display = "invalid info: {}", 0)]
   InvalidInfo(serde_json::Error),
+  #[fail(display = "invalid key")]
+  InvalidKey,
+  #[fail(display = "not authorized")]
+  NotAuthorized,
 }
 
 impl From<reqwest::Error> for Error {
