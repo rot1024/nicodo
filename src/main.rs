@@ -1,4 +1,5 @@
 use clap::{crate_authors, crate_description, crate_name, crate_version};
+use std::path::Path;
 
 mod config;
 mod error;
@@ -39,6 +40,22 @@ async fn main2() -> error::Result<()> {
                 .conflicts_with_all(&["email", "password"]),
         )
         .arg(
+            clap::Arg::with_name("format")
+                .short("f")
+                .long("format")
+                .default_value("xml")
+                .possible_value("json")
+                .possible_value("xml"),
+        )
+        .arg(
+            clap::Arg::with_name("output")
+                .short("o")
+                .long("output")
+                .help("output directory path")
+                .default_value(".")
+                .takes_value(true),
+        )
+        .arg(
             clap::Arg::with_name("id")
                 .required(true)
                 .help("Video id: www.nicovideo.jp/watch/XXXXXXX"),
@@ -64,7 +81,25 @@ async fn main2() -> error::Result<()> {
     let info = session.get_info(matcher.value_of("id").unwrap()).await?;
     let comments = session.get_comments(&info).await?;
 
-    println!("{:?}", comments);
+    let ext = if let Some("json") = matcher.value_of("format") {
+        "json"
+    } else {
+        "xml"
+    };
+    let dest = Path::new(matcher.value_of("output").unwrap())
+        .join(format!("{}.{}", info.video.title, ext));
+
+    // TODO: asynchronize
+    let mut file = std::fs::File::create(&dest).map_err(|err| error::Error::Write(err))?;
+
+    match ext {
+        "json" => {
+            nicodo::write_json(&mut file, &comments)?;
+        }
+        _ => {
+            nicodo::write_xml(&mut file, &comments)?;
+        }
+    }
 
     Ok(())
 }

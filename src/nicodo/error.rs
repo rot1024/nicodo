@@ -12,6 +12,8 @@ pub enum Error {
   InvalidKey,
   #[fail(display = "not authorized")]
   NotAuthorized,
+  #[fail(display = "serialization error")]
+  Serialization,
 }
 
 impl From<reqwest::Error> for Error {

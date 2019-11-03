@@ -6,6 +6,8 @@ pub enum Error {
   Config(std::io::Error),
   #[fail(display = "user_session must be specified")]
   UserSessionMustBeSpecified,
+  #[fail(display = "failed to write comment file")]
+  Write(std::io::Error),
 }
 
 impl From<nicodo::Error> for Error {

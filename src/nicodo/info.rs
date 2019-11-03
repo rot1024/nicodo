@@ -13,6 +13,7 @@ pub struct Info {
 #[derive(Debug, Deserialize)]
 pub struct Video {
   pub id: String,
+  pub title: String,
   pub duration: usize,
 }
 
