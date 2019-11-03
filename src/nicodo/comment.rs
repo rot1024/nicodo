@@ -25,13 +25,13 @@ pub struct Chat {
 
 #[derive(Debug, Serialize)]
 pub struct Comment {
-  thread: String,
-  no: usize,
-  vpos: usize,
-  date: usize,
-  user_id: Option<String>,
-  content: String,
-  mail: Option<String>,
+  pub thread: String,
+  pub no: usize,
+  pub vpos: usize,
+  pub date: usize,
+  pub user_id: Option<String>,
+  pub content: String,
+  pub mail: Option<String>,
 }
 
 impl Session {
@@ -56,21 +56,23 @@ impl Session {
       .json::<Vec<Element>>()
       .await?;
 
-    Ok(
-      res
-        .into_iter()
-        .filter_map(|e| e.chat)
-        .filter(|c| c.content.is_some())
-        .map(|c| Comment {
-          thread: c.thread,
-          no: c.no,
-          vpos: c.vpos,
-          date: c.date,
-          user_id: c.user_id,
-          content: c.content.unwrap(),
-          mail: c.mail,
-        })
-        .collect(),
-    )
+    let mut comments = res
+      .into_iter()
+      .filter_map(|e| e.chat)
+      .filter(|c| c.content.is_some())
+      .map(|c| Comment {
+        thread: c.thread,
+        no: c.no,
+        vpos: c.vpos,
+        date: c.date,
+        user_id: c.user_id,
+        content: c.content.unwrap(),
+        mail: c.mail,
+      })
+      .collect::<Vec<_>>();
+
+    comments.sort_by(|a, b| a.vpos.cmp(&b.vpos));
+
+    Ok(comments)
   }
 }
