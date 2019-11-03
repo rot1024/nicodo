@@ -5,9 +5,9 @@ pub struct Session {
 }
 
 impl Session {
-  pub fn from_session_id(session_id: &str) -> Self {
+  pub fn from_user_session(user_session: &str) -> Self {
     Self {
-      cookie: format!("user_session={}", session_id),
+      cookie: format!("user_session={}", user_session),
       client: reqwest::Client::new(),
     }
   }

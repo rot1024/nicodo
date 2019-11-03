@@ -4,8 +4,8 @@ pub enum Error {
   Nicodo(nicodo::Error),
   #[fail(display = "failed to write config file")]
   Config(std::io::Error),
-  #[fail(display = "session must be specified")]
-  SessionMustBeSpecified,
+  #[fail(display = "user_session must be specified")]
+  UserSessionMustBeSpecified,
 }
 
 impl From<nicodo::Error> for Error {

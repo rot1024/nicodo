@@ -33,6 +33,7 @@ async fn main2() -> error::Result<()> {
             clap::Arg::with_name("session")
                 .short("s")
                 .long("session")
+                .help("user_session value in cookie")
                 .empty_values(false)
                 .takes_value(true)
                 .conflicts_with_all(&["email", "password"]),
@@ -46,12 +47,12 @@ async fn main2() -> error::Result<()> {
 
     let conf = config::Config::load().await;
 
-    let session = if let Some(session_id) = matcher.value_of("session") {
-        nicodo::Session::from_session_id(session_id)
+    let session = if let Some(user_session) = matcher.value_of("session") {
+        nicodo::Session::from_user_session(user_session)
     } else if let Some(c) = conf {
         nicodo::Session::from_cookie(&c.session)
     } else {
-        return Err(error::Error::SessionMustBeSpecified);
+        return Err(error::Error::UserSessionMustBeSpecified);
     };
 
     config::Config {
