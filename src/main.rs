@@ -36,6 +36,11 @@ async fn main2() -> Result<()> {
         //         .requires("email"),
         // )
         .arg(
+            clap::Arg::with_name("nosaveconfig")
+                .long("nosave")
+                .help("does not save config file"),
+        )
+        .arg(
             clap::Arg::with_name("session")
                 .short("u")
                 .long("session")
@@ -123,17 +128,21 @@ async fn main2() -> Result<()> {
 
     let session = if let Some(user_session) = matcher.value_of("session") {
         nicodo::Session::from_user_session(user_session)
-    } else if let Some(c) = conf {
+    } else if let Some(c) = &conf {
         nicodo::Session::from_cookie(&c.session)
     } else {
         return Err(Error::UserSessionMustBeSpecified);
     };
 
-    config::Config {
-        session: session.cookie.to_string(),
+    if !matcher.is_present("nosaveconfig") {
+        if let None = &conf {
+            config::Config {
+                session: session.cookie.to_string(),
+            }
+            .save()
+            .await?;
+        }
     }
-    .save()
-    .await?;
 
     let quite = matcher.is_present("quite");
 
