@@ -4,7 +4,7 @@ use super::{
 };
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 struct Element {
@@ -46,7 +46,7 @@ impl Session {
     let (threadkey, force_184) = self.get_threadkey(&info.context.watch_id).await?;
     let waybackkey = self.get_waybackkey(&info.context.watch_id).await?;
 
-    let mut comments: BTreeMap<usize, Comment> = BTreeMap::new();
+    let mut comments: HashMap<usize, Comment> = HashMap::new();
 
     for wayback in wayback.iter() {
       on_progress(wayback);
