@@ -8,6 +8,12 @@ pub enum Error {
   UserSessionMustBeSpecified,
   #[fail(display = "failed to write comment file")]
   Write(std::io::Error),
+  #[fail(display = "invalid date")]
+  Date,
+  #[fail(display = "invalid duration")]
+  Duration,
+  #[fail(display = "invalid period")]
+  Period,
 }
 
 impl From<nicodo::Error> for Error {
