@@ -1,4 +1,5 @@
 use super::{Error, Result, Session};
+use chrono::NaiveDateTime;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -15,6 +16,8 @@ pub struct Video {
   pub id: String,
   pub title: String,
   pub duration: usize,
+  #[serde(rename = "postedDateTime", with = "posted_date_time")]
+  pub posted_date_time: NaiveDateTime,
 }
 
 #[derive(Debug, Deserialize)]
@@ -75,5 +78,20 @@ impl Session {
     }
 
     Ok(info)
+  }
+}
+
+mod posted_date_time {
+  use chrono::NaiveDateTime;
+  use serde::{self, Deserialize, Deserializer};
+
+  const FORMAT: &'static str = "%Y/%m/%d %H:%M:%S";
+
+  pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    let s = String::deserialize(deserializer)?;
+    NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
   }
 }
