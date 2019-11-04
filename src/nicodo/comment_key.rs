@@ -25,16 +25,16 @@ impl Session {
 
     Ok((key[1].to_string(), key[2].to_string()))
   }
+
+  pub async fn get_waybackkey(&self, id: &str) -> Result<String> {
+    let url = format!("https://flapi.nicovideo.jp/api/getwaybackkey?thread={}", id);
+    let res = self.get(&url).send().await?.text().await?;
+
+    let key = RE_WAYBACK
+      .captures_iter(&res)
+      .next()
+      .ok_or(Error::InvalidKey)?;
+
+    Ok(key[1].to_string())
+  }
 }
-
-// pub async fn get_waybackkey(id: &str) -> Result<String> {
-//   let url = format!("https://flapi.nicovideo.jp/api/getthreadkey?thread={}", id);
-//   let res = reqwest::get(&url).await?.text().await?;
-
-//   let key = RE_WAYBACK
-//     .captures_iter(&res)
-//     .next()
-//     .ok_or(Error::InvalidKey)?;
-
-//   Ok(key[1].to_string())
-// }

@@ -1,8 +1,10 @@
 use super::{
   comment_body::{get_body, Options},
-  Info, Result, Session,
+  Error, Info, Result, Session, Wayback,
 };
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Deserialize)]
 struct Element {
@@ -35,42 +37,63 @@ pub struct Comment {
 }
 
 impl Session {
-  pub async fn get_comments(&self, info: &Info) -> Result<Vec<Comment>> {
+  pub async fn get_comments<F: Fn(Option<NaiveDateTime>)>(
+    &self,
+    info: &Info,
+    wayback: &Wayback,
+    on_progress: F,
+  ) -> Result<Vec<Comment>> {
     let (threadkey, force_184) = self.get_threadkey(&info.context.watch_id).await?;
+    let waybackkey = self.get_waybackkey(&info.context.watch_id).await?;
 
-    let (body, _counter_rs, _counter_ps) = get_body(Options {
-      info: info,
-      threadkey: &threadkey,
-      force_184: &force_184,
-      counter_rs: 0,
-      counter_ps: 0,
-    });
+    let mut comments: BTreeMap<usize, Comment> = BTreeMap::new();
 
-    let res = reqwest::Client::new()
-      .post("https://nmsg.nicovideo.jp/api.json/")
-      .body(body)
-      .header(reqwest::header::CONTENT_TYPE, "text/plain;charset=UTF-8")
-      .send()
-      .await?
-      .error_for_status()?
-      .json::<Vec<Element>>()
-      .await?;
+    for wayback in wayback.iter() {
+      on_progress(wayback);
 
-    let mut comments = res
-      .into_iter()
-      .filter_map(|e| e.chat)
-      .filter(|c| c.content.is_some())
-      .map(|c| Comment {
-        thread: c.thread,
-        no: c.no,
-        vpos: c.vpos,
-        date: c.date,
-        user_id: c.user_id,
-        content: c.content.unwrap(),
-        mail: c.mail,
-      })
-      .collect::<Vec<_>>();
+      let (body, _counter_rs, _counter_ps) = get_body(Options {
+        info: info,
+        threadkey: &threadkey,
+        waybackkey: &waybackkey,
+        force_184: &force_184,
+        counter_rs: 0,
+        counter_ps: 0,
+        wayback: wayback,
+      });
 
+      let res = reqwest::Client::new()
+        .post("https://nmsg.nicovideo.jp/api.json/")
+        .body(body)
+        .header(reqwest::header::CONTENT_TYPE, "text/plain;charset=UTF-8")
+        .send()
+        .await?
+        .error_for_status()?
+        .json::<Vec<Element>>()
+        .await?;
+
+      res
+        .into_iter()
+        .filter_map(|e| e.chat)
+        .filter(|c| c.content.is_some())
+        .map(|c| Comment {
+          thread: c.thread,
+          no: c.no,
+          vpos: c.vpos,
+          date: c.date,
+          user_id: c.user_id,
+          content: c.content.unwrap(),
+          mail: c.mail,
+        })
+        .for_each(|c| {
+          comments.insert(c.no, c);
+        })
+    }
+
+    if comments.len() == 0 {
+      return Err(Error::NoComments);
+    }
+
+    let mut comments: Vec<_> = comments.into_iter().map(|(_, c)| c).collect();
     comments.sort_by(|a, b| a.vpos.cmp(&b.vpos));
 
     Ok(comments)

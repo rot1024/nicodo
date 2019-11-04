@@ -45,12 +45,14 @@ struct Thread {
   when: Option<String>,
 }
 
-pub struct Options<'a, 'b, 'c> {
+pub struct Options<'a, 'b, 'c, 'd> {
   pub info: &'a Info,
   pub threadkey: &'b str,
-  pub force_184: &'c str,
+  pub waybackkey: &'c str,
+  pub force_184: &'d str,
   pub counter_rs: usize,
   pub counter_ps: usize,
+  pub wayback: Option<chrono::NaiveDateTime>,
 }
 
 pub fn get_body(opts: Options) -> (String, usize, usize) {
@@ -112,10 +114,22 @@ pub fn get_body(opts: Options) -> (String, usize, usize) {
           userkey: if t.is_thread_key_required {
             None
           } else {
-            Some(opts.info.context.userkey.to_string())
+            if let Some(_) = opts.wayback {
+              None
+            } else {
+              Some(opts.info.context.userkey.to_string())
+            }
           },
-          waybackkey: None, // not implemented
-          when: None,       // not implemented
+          waybackkey: if let Some(_) = opts.wayback {
+            Some(opts.waybackkey.to_string())
+          } else {
+            None
+          },
+          when: if let Some(dt) = opts.wayback {
+            Some(dt.timestamp().to_string())
+          } else {
+            None
+          },
         }));
 
         threads.push(Element::Ping(Ping {
@@ -153,10 +167,22 @@ pub fn get_body(opts: Options) -> (String, usize, usize) {
             userkey: if t.is_thread_key_required {
               None
             } else {
-              Some(opts.info.context.userkey.to_string())
+              if let Some(_) = opts.wayback {
+                None
+              } else {
+                Some(opts.info.context.userkey.to_string())
+              }
             },
-            waybackkey: None, // not implemented
-            when: None,       // not implemented
+            waybackkey: if let Some(_) = opts.wayback {
+              Some(opts.waybackkey.to_string())
+            } else {
+              None
+            },
+            when: if let Some(dt) = opts.wayback {
+              Some(dt.timestamp().to_string())
+            } else {
+              None
+            },
           }));
 
           threads.push(Element::Ping(Ping {

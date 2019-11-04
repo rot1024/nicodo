@@ -1,6 +1,7 @@
 mod comment;
 mod comment_body;
 mod comment_key;
+mod comment_wayback;
 mod error;
 mod info;
 mod session;
@@ -9,6 +10,7 @@ mod xml;
 
 pub use self::error::*;
 pub use comment::Comment;
+pub use comment_wayback::Wayback;
 pub use info::Info;
 pub use session::Session;
 pub use xml::{write_json, write_xml};
