@@ -150,7 +150,12 @@ async fn main2() -> Result<()> {
         eprintln!("Fetching video info");
     }
 
-    let info = session.get_info(matcher.value_of("id").unwrap()).await?;
+    let id = matcher
+        .value_of("id")
+        .map(|id| id.replace("https://www.nicovideo.jp/watch/", ""))
+        .unwrap();
+
+    let info = session.get_info(&id).await?;
 
     let interval = matcher.value_of("interval");
     let wayback = if let Some(ps) = matcher.value_of("date") {
@@ -191,7 +196,7 @@ async fn main2() -> Result<()> {
                 include_latest,
                 ..
             } => eprintln!(
-                "Period: {} ~ {}\nInterval: {}{}",
+                "Period: {} ~ {}, Interval: {}{}",
                 start.format(DISPLAY_DATETIME_FORMAT),
                 end.format(DISPLAY_DATETIME_FORMAT),
                 interval.unwrap(),
