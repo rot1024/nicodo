@@ -47,7 +47,7 @@ user_session=XXXXXXX;
 Specify the session id as below when using nicodo for the first time:
 
 ```sh
-nicodo -s XXXXXXX <video id>
+nicodo -u XXXXXXX <video id>
 ```
 
 The configuration file is saved at `~/.local/share/nicodo/nicodo_config.json` (Linux), `~/Library/Application Support/nicodo/nicodo_config.json` (MacOS) or `C:\Users\hoge\AppData\Local\nicodo\nicodo_config.json`. (Windows)
