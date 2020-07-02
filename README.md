@@ -3,31 +3,30 @@
 Niconico-doga Comment Downloader
 
 ```
-nicodo 0.1.0
-rot1024 <aayhrot@gmail.com>
-Niconico-doga Comment Downloader
+nicodo 
 
 USAGE:
-    nicodo [FLAGS] [OPTIONS] <id>
-
-FLAGS:
-    -h, --help       Prints help information
-    -l, --latest     include latest comments
-        --nosave     does not save config file
-    -q, --quiet      hide progress
-    -V, --version    Prints version information
-
-OPTIONS:
-    -d, --date <date>             date: 2019-01-01, 2019-01-01 12:00:00
-    -f, --format <format>          [default: xml]  [possible values: json, xml]
-    -i, --interval <interval>     interval: 1h, 1d
-    -o, --output <output>         output directory path [default: .]
-    -e, --end <period end>        period end: 2019-01-01, 2019-01-01 12:00:00, latest, posted+1d, posted+1w
-    -s, --start <period start>    period start: 2019-01-01, 2019-01-01 12:00:00, posted, posted+1d, posted+1w
-    -u, --session <session>       user_session value in cookie
+    nicodo [FLAGS] [OPTIONS] [ids]...
 
 ARGS:
-    <id>    Video id: www.nicovideo.jp/watch/XXXXXXX
+    <ids>...    Video id: www.nicovideo.jp/watch/XXXXXXX
+
+FLAGS:
+        --dump-session-id    Dump session ID
+    -h, --help               Prints help information
+    -l, --latest             Include latest comments
+        --nosave             Config file won't be saved
+    -q, --quiet              Hide progress
+    -V, --version            Prints version information
+
+OPTIONS:
+    -d, --date <date>            Date: 2019-01-01, 2019-01-01 12:00:00
+    -e, --end <end>              Period end: 2019-01-01, 2019-01-01 12:00:00, latest, posted+1d, posted+1w
+    -f, --format <format>        Format [default: xml]
+    -i, --interval <interval>    Interval: 1h, 1d
+    -o, --output <output>        Output directory path [default: .]
+    -u, --session <session>      user_session value in cookie
+    -s, --start <start>          Period start: 2019-01-01, 2019-01-01 12:00:00, posted, posted+1d, posted+1w
 ```
 
 ## Install
