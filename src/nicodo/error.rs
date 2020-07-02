@@ -1,27 +1,29 @@
-#[derive(Debug, failure::Fail)]
+use thiserror::Error;
+
+#[derive(Debug, Error)]
 pub enum Error {
-  #[fail(display = "request: {}", 0)]
-  Request(reqwest::Error),
-  #[fail(display = "invalid sign in page")]
-  InvalidSignInPage,
-  #[fail(display = "invalid watch page")]
-  InvalidWatchPage,
-  #[fail(display = "invalid info: {}", 0)]
-  InvalidInfo(serde_json::Error),
-  #[fail(display = "invalid key")]
-  InvalidKey,
-  #[fail(display = "not authorized")]
-  NotAuthorized,
-  #[fail(display = "serialization error")]
-  Serialization,
-  #[fail(display = "no comments found")]
-  NoComments,
+    #[error("request: {0}")]
+    Request(reqwest::Error),
+    #[error("invalid sign in page")]
+    InvalidSignInPage,
+    #[error("invalid watch page")]
+    InvalidWatchPage,
+    #[error("invalid info: {0}")]
+    InvalidInfo(serde_json::Error),
+    #[error("invalid key")]
+    InvalidKey,
+    #[error("not authorized")]
+    NotAuthorized,
+    #[error("serialization error")]
+    Serialization,
+    #[error("no comments found")]
+    NoComments,
 }
 
 impl From<reqwest::Error> for Error {
-  fn from(err: reqwest::Error) -> Self {
-    Self::Request(err)
-  }
+    fn from(err: reqwest::Error) -> Self {
+        Self::Request(err)
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
