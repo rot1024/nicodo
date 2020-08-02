@@ -1,5 +1,6 @@
 use clap::Clap;
 use error::{Error, Result};
+use std::process::exit;
 
 mod config;
 mod datetime;
@@ -10,6 +11,7 @@ mod process;
 async fn main() {
     if let Err(err) = main2().await {
         eprintln!("{}", err);
+        exit(1);
     }
 }
 
