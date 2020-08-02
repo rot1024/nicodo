@@ -1,25 +1,18 @@
+use derive_more::From;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, From)]
 pub enum Error {
     #[error("{0}")]
     Nicodo(nicodo::Error),
-    #[error("failed to write config file")]
-    Config(std::io::Error),
-    #[error("user_session must be specified")]
-    UserSessionMustBeSpecified,
+    #[error("{0}")]
+    Config(confy::ConfyError),
     #[error("start, end, or interval is missing")]
     Period,
-    #[error("failed to write comment file")]
-    Write(std::io::Error),
-    #[error("error: {0}")]
+    #[error("{0}")]
+    IO(std::io::Error),
+    #[error("{0}")]
     Error(Box<dyn std::error::Error + Send>),
-}
-
-impl From<nicodo::Error> for Error {
-    fn from(err: nicodo::Error) -> Self {
-        Self::Nicodo(err)
-    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

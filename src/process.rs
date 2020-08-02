@@ -162,8 +162,7 @@ pub async fn process(id: &str, opts: &Options) -> error::Result<()> {
     let format = opts.format.clone();
 
     spawn_blocking(move || -> crate::error::Result<()> {
-        let mut file =
-            std::fs::File::create(&dest).map_err(|err| crate::error::Error::Write(err))?;
+        let mut file = std::fs::File::create(&dest)?;
         match format {
             Format::JSON => {
                 nicodo::write_json(&mut file, &comments)?;
