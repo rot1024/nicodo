@@ -1,4 +1,5 @@
 use clap::Clap;
+use dialoguer::Input;
 use error::{Error, Result};
 use std::process::exit;
 
@@ -45,6 +46,8 @@ struct Opts {
     interval: Option<datetime::Duration>,
     #[clap(long = "nosave", about = "Config file won't be saved")]
     nosaveconfig: bool,
+    #[clap(long = "reset", short, about = "Reset config")]
+    reset_config: bool,
     #[clap(short = "l", long = "latest", about = "Include latest comments")]
     includes_latest: bool,
     #[clap(short, long, about = "Hide progress")]
@@ -87,33 +90,33 @@ async fn main2() -> Result<()> {
         return Err(Error::Period);
     }
 
-    let conf = config::Config::load().await;
+    let mut conf = config::Config::load()?;
+    let mut conf_changed = false;
 
     if opts.dump_session_id {
-        if let Some(c) = conf {
-            println!("{}", c.session);
-        } else {
-            println!("no config file is saved");
+        if !conf.session.is_empty() {
+            println!("{}", &conf.session);
         }
         return Ok(());
     }
 
-    let session = opts
-        .session
-        .as_ref()
-        .map(|s| nicodo::Session::from_user_session(&s))
-        .or_else(|| conf.as_ref().map(|c| c.session()))
-        .ok_or(Error::UserSessionMustBeSpecified)?;
-
-    if opts.session.is_some() && !opts.nosaveconfig {
-        if let None = conf {
-            config::Config {
-                session: session.cookie.to_string(),
-            }
-            .save()
-            .await?;
-        }
+    if conf.session.is_empty() && opts.session.is_none() || opts.reset_config {
+        conf.session = Input::<String>::new()
+            .with_prompt("Session (user_session's value)")
+            .interact()?;
+        conf_changed = true;
     }
+
+    if let Some(s) = opts.session.as_ref() {
+        conf.session = s.to_string();
+        conf_changed = true;
+    }
+
+    if conf_changed && !opts.nosaveconfig {
+        conf.save()?;
+    }
+
+    let session = nicodo::Session::from_user_session(&conf.session);
 
     let options = process::Options {
         quiet,
