@@ -22,3 +22,6 @@ serde = { version = "1.0.114", features = ["derive"] }
 chrono = "0.4.11"
 dirs = "3.0.0"
 thiserror = "1.0.20"
+confy = "0.4.0"
+derive_more = "0.99.9"
+dialoguer = "0.6.2"
