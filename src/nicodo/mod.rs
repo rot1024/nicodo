@@ -1,3 +1,4 @@
+mod channel;
 mod comment;
 mod comment_body;
 mod comment_key;
@@ -9,6 +10,7 @@ mod xml;
 // mod signin;
 
 pub use self::error::*;
+pub use channel::Channel;
 pub use comment::Comment;
 pub use comment_wayback::Wayback;
 pub use info::Info;

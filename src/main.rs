@@ -6,6 +6,7 @@ use std::process::exit;
 mod config;
 mod datetime;
 mod error;
+mod id;
 mod process;
 
 #[tokio::main]
@@ -54,8 +55,8 @@ struct Opts {
     quiet: bool,
     #[clap(long, about = "Dump session ID")]
     dump_session_id: bool,
-    #[clap(about = "Video id: www.nicovideo.jp/watch/XXXXXXX")]
-    ids: Vec<String>,
+    #[clap(about = "Video ID, video URL, or channel URL")]
+    ids: Vec<id::Id>,
 }
 
 impl Opts {
@@ -126,12 +127,8 @@ async fn main2() -> Result<()> {
         output: opts.output,
     };
 
-    for id in opts
-        .ids
-        .iter()
-        .map(|id| id.replace("https://www.nicovideo.jp/watch/", ""))
-    {
-        process::process(&id, &options).await?;
+    for item in opts.ids {
+        process::process(&item, &options).await?;
     }
 
     if !quiet {

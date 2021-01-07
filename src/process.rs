@@ -1,6 +1,7 @@
+use super::id::Id;
 use crate::{datetime, error};
 use chrono::NaiveDateTime;
-use std::{path::Path, str::FromStr};
+use std::{borrow::Cow, path::Path, str::FromStr};
 use tokio::task::spawn_blocking;
 
 const DISPLAY_DATETIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
@@ -81,13 +82,30 @@ impl Timespan {
     }
 }
 
-pub async fn process(id: &str, opts: &Options) -> error::Result<()> {
+pub async fn process(item: &Id, opts: &Options) -> error::Result<()> {
+    for id in match item {
+        Id::Channel(id) => {
+            let res = opts.session.get_channel(id).await?;
+
+            eprintln!("Channel: {} ({} videos)", &id, res.len());
+
+            res.into_iter().map(|v| Cow::from(v.id)).collect::<Vec<_>>()
+        }
+        Id::Video(id) => vec![Cow::from(id)],
+    } {
+        process_video(&id, opts).await?;
+    }
+
+    Ok(())
+}
+
+async fn process_video(id: &str, opts: &Options) -> error::Result<()> {
     let info = opts.session.get_info(id).await?;
 
     let wayback = opts.timespan.wayback(info.video.posted_date_time);
 
     if !opts.quiet {
-        eprintln!("Video: {}", id);
+        eprintln!("Video: {} ({})", id, info.video.title);
         match wayback {
             nicodo::Wayback::Latest => eprintln!("Latest comments"),
             nicodo::Wayback::DateTime(dt) => {
