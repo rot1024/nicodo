@@ -75,7 +75,7 @@ pub fn get_body(opts: Options) -> (String, usize, usize) {
 
     body.extend(
         opts.info
-            .comment_composite
+            .comment
             .threads
             .iter()
             .filter(|t| t.is_active)
@@ -117,7 +117,7 @@ pub fn get_body(opts: Options) -> (String, usize, usize) {
                         if let Some(_) = opts.wayback {
                             None
                         } else {
-                            Some(opts.info.context.userkey.to_string())
+                            Some(opts.info.comment.keys.user_key.to_string())
                         }
                     },
                     waybackkey: if let Some(_) = opts.wayback {
@@ -170,7 +170,7 @@ pub fn get_body(opts: Options) -> (String, usize, usize) {
                             if let Some(_) = opts.wayback {
                                 None
                             } else {
-                                Some(opts.info.context.userkey.to_string())
+                                Some(opts.info.comment.keys.user_key.to_string())
                             }
                         },
                         waybackkey: if let Some(_) = opts.wayback {

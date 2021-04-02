@@ -102,7 +102,7 @@ pub async fn process(item: &Id, opts: &Options) -> error::Result<()> {
 async fn process_video(id: &str, opts: &Options) -> error::Result<()> {
     let info = opts.session.get_info(id).await?;
 
-    let wayback = opts.timespan.wayback(info.video.posted_date_time);
+    let wayback = opts.timespan.wayback(info.video.registered_at);
 
     if !opts.quiet {
         eprintln!("Video: {} ({})", id, info.video.title);

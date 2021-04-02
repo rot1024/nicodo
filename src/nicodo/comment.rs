@@ -43,8 +43,8 @@ impl Session {
         wayback: &Wayback,
         on_progress: F,
     ) -> Result<Vec<Comment>> {
-        let (threadkey, force_184) = self.get_threadkey(&info.context.watch_id).await?;
-        let waybackkey = self.get_waybackkey(&info.context.watch_id).await?;
+        let (threadkey, force_184) = self.get_threadkey(&info.client.watch_id).await?;
+        let waybackkey = self.get_waybackkey(&info.client.watch_id).await?;
 
         let mut comments: HashMap<usize, Comment> = HashMap::new();
 
@@ -52,13 +52,13 @@ impl Session {
             on_progress(wayback);
 
             let (body, _counter_rs, _counter_ps) = get_body(Options {
-                info: info,
+                info,
                 threadkey: &threadkey,
                 waybackkey: &waybackkey,
                 force_184: &force_184,
                 counter_rs: 0,
                 counter_ps: 0,
-                wayback: wayback,
+                wayback,
             });
 
             let res = reqwest::Client::new()

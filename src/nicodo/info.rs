@@ -7,9 +7,8 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct Info {
     pub video: Video,
-    #[serde(rename = "commentComposite")]
-    pub comment_composite: CommentComposite,
-    pub context: Context,
+    pub comment: Comment,
+    pub client: Client,
     pub viewer: Viewer,
 }
 
@@ -18,17 +17,24 @@ pub struct Video {
     pub id: String,
     pub title: String,
     pub duration: usize,
-    #[serde(rename = "postedDateTime", with = "posted_date_time")]
-    pub posted_date_time: NaiveDateTime,
+    #[serde(rename = "registeredAt", with = "registered_at")]
+    pub registered_at: NaiveDateTime,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CommentComposite {
-    pub threads: Vec<CommentCompositeThread>,
+pub struct Comment {
+    pub keys: CommentKeys,
+    pub threads: Vec<CommentThread>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CommentCompositeThread {
+pub struct CommentKeys {
+    #[serde(rename = "userKey")]
+    pub user_key: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CommentThread {
     pub id: usize,
     pub fork: usize,
     #[serde(rename = "isActive")]
@@ -44,8 +50,7 @@ pub struct CommentCompositeThread {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Context {
-    pub userkey: String,
+pub struct Client {
     #[serde(rename = "watchId")]
     pub watch_id: String,
 }
@@ -77,9 +82,9 @@ impl Session {
             .and_then(|n| n.value().attr("data-api-data"))
             .ok_or(Error::InvalidWatchPage)?;
 
-        let info = serde_json::from_str::<Info>(data).map_err(|err| Error::InvalidInfo(err))?;
+        let info = serde_json::from_str::<Info>(&data).map_err(|err| Error::InvalidInfo(err))?;
 
-        if info.context.userkey.is_empty() {
+        if info.comment.keys.user_key.is_empty() {
             return Err(Error::NotAuthorized);
         }
 
@@ -87,11 +92,11 @@ impl Session {
     }
 }
 
-mod posted_date_time {
+mod registered_at {
     use chrono::NaiveDateTime;
     use serde::{self, Deserialize, Deserializer};
 
-    const FORMAT: &'static str = "%Y/%m/%d %H:%M:%S";
+    const FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S+09:00";
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
     where
