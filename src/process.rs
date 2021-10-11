@@ -135,12 +135,9 @@ async fn process_video(id: &str, opts: &Options) -> error::Result<()> {
     }
 
     let progress = if !opts.quiet {
-        Some(
-            indicatif::ProgressBar::new(0).with_style(
-                indicatif::ProgressStyle::default_bar()
-                    .template("{spinner} {wide_bar} {pos}/{len} {msg}"),
-            ),
-        )
+        Some(indicatif::ProgressBar::new(0).with_style(
+            indicatif::ProgressStyle::default_bar().template("{wide_bar} {pos}/{len} {msg}"),
+        ))
     } else {
         None
     };
