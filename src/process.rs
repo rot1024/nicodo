@@ -1,7 +1,7 @@
 use super::id::Id;
 use crate::{datetime, error};
 use chrono::NaiveDateTime;
-use std::{borrow::Cow, path::Path, str::FromStr};
+use std::{borrow::Cow, convert::TryInto, path::Path, str::FromStr};
 use tokio::task::spawn_blocking;
 
 const DISPLAY_DATETIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
@@ -133,28 +133,48 @@ async fn process_video(id: &str, opts: &Options) -> error::Result<()> {
         };
     }
 
+    let progress = if !opts.quiet {
+        Some(
+            indicatif::ProgressBar::new(0).with_style(
+                indicatif::ProgressStyle::default_bar()
+                    .template("{spinner} {wide_bar} {pos}/{len} {msg}"),
+            ),
+        )
+    } else {
+        None
+    };
     let comments = opts
         .session
-        .get_comments(&info, &wayback, |p| {
-            if opts.quiet {
-                return;
-            }
-            if let Some(dt) = p {
-                eprintln!(
-                    "Fetching comments at {}",
-                    dt.format(DISPLAY_DATETIME_FORMAT)
-                );
-            } else {
-                eprintln!("Fetching latest comments");
+        .get_comments(&info, &wayback, |ctx| {
+            if let Some(p) = progress.as_ref() {
+                if let Some(dt) = ctx.wayback {
+                    p.set_length(ctx.total.try_into().unwrap());
+                    p.set_position((ctx.progress + 1).try_into().unwrap());
+                    p.set_message(format!(
+                        "{} ({})",
+                        dt.format(DISPLAY_DATETIME_FORMAT),
+                        ctx.comments.len()
+                    ));
+                } else {
+                    p.set_message(format!("latest ({})", ctx.comments.len()));
+                }
             }
         })
         .await?;
 
-    if !opts.quiet {
-        eprintln!("Writing comments to the file");
+    if let Some(p) = progress.as_ref() {
+        p.finish_and_clear();
     }
 
-    let dest = Path::new(&opts.output).join(format!(
+    let comments_len = comments.len();
+    if comments_len == 0 {
+        if !opts.quiet {
+            eprintln!("No comments fetched");
+        }
+        return Ok(());
+    }
+
+    let filename = format!(
         "{}{}.{}",
         info.video.title,
         match wayback {
@@ -175,8 +195,8 @@ async fn process_video(id: &str, opts: &Options) -> error::Result<()> {
             _ => "".to_string(),
         },
         opts.format.ext(),
-    ));
-
+    );
+    let dest = Path::new(&opts.output).join(&filename);
     let format = opts.format.clone();
 
     spawn_blocking(move || -> crate::error::Result<()> {
@@ -193,5 +213,11 @@ async fn process_video(id: &str, opts: &Options) -> error::Result<()> {
         Ok(())
     })
     .await
-    .map_err(|e| error::Error::Error(Box::new(e)))?
+    .map_err(|e| error::Error::Error(Box::new(e)))??;
+
+    if !opts.quiet {
+        eprintln!("Writing {} comments to \"{}\"", comments_len, filename);
+    }
+
+    Ok(())
 }

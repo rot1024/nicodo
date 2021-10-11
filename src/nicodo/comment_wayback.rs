@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use chrono::{Duration, NaiveDateTime};
 
 #[derive(Debug, Clone)]
@@ -89,6 +91,25 @@ impl Iterator for WaybackIter {
         };
         self.counter += 1;
         res
+    }
+}
+
+impl ExactSizeIterator for WaybackIter {
+    fn len(&self) -> usize {
+        match self.wayback {
+            Wayback::Latest => 1,
+            Wayback::DateTime(_) => 1,
+            Wayback::Period {
+                start,
+                end,
+                interval,
+                include_latest,
+            } => ((end - start).num_milliseconds() / interval.num_milliseconds()
+                + 1
+                + if include_latest { 1 } else { 0 })
+            .try_into()
+            .unwrap(),
+        }
     }
 }
 
@@ -208,5 +229,38 @@ mod tests {
         }
         .into_iter();
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_len() {
+        assert_eq!(Wayback::Latest.into_iter().len(), 1);
+        assert_eq!(
+            Wayback::DateTime(NaiveDateTime::from_str("2019-11-03T00:00:00").unwrap())
+                .into_iter()
+                .len(),
+            1
+        );
+        assert_eq!(
+            Wayback::Period {
+                start: NaiveDateTime::from_str("2019-11-03T00:00:00").unwrap(),
+                end: NaiveDateTime::from_str("2019-11-10T00:00:00").unwrap(),
+                interval: Duration::days(1),
+                include_latest: false,
+            }
+            .into_iter()
+            .len(),
+            8
+        );
+        assert_eq!(
+            Wayback::Period {
+                start: NaiveDateTime::from_str("2019-11-03T00:00:00").unwrap(),
+                end: NaiveDateTime::from_str("2019-11-10T00:00:00").unwrap(),
+                interval: Duration::days(1),
+                include_latest: true,
+            }
+            .into_iter()
+            .len(),
+            9
+        );
     }
 }

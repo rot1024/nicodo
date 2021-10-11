@@ -1,10 +1,10 @@
 use super::{
     comment_body::{get_body, Options},
-    Error, Info, Result, Session, Wayback,
+    Info, Result, Session, Wayback,
 };
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 const API_ENDPOINT: &'static str = "https://nvcomment.nicovideo.jp/legacy/api.json";
 
@@ -38,8 +38,16 @@ pub struct Comment {
     pub mail: Option<String>,
 }
 
+#[derive(Debug)]
+pub struct Context<'a> {
+    pub wayback: Option<NaiveDateTime>,
+    pub total: usize,
+    pub progress: usize,
+    pub comments: &'a [Comment],
+}
+
 impl Session {
-    pub async fn get_comments<F: Fn(Option<NaiveDateTime>)>(
+    pub async fn get_comments<F: Fn(Context)>(
         &self,
         info: &Info,
         wayback: &Wayback,
@@ -50,9 +58,10 @@ impl Session {
 
         let mut comments: HashMap<usize, Comment> = HashMap::new();
 
-        for wayback in wayback.iter() {
-            on_progress(wayback);
+        let wayback_iter = wayback.iter();
+        let wayback_len = wayback_iter.len();
 
+        for (index, current) in wayback_iter.enumerate() {
             let (body, _counter_rs, _counter_ps) = get_body(Options {
                 info,
                 threadkey: &threadkey,
@@ -60,7 +69,7 @@ impl Session {
                 force_184: &force_184,
                 counter_rs: 0,
                 counter_ps: 0,
-                wayback,
+                wayback: current,
             });
 
             let res = reqwest::Client::new()
@@ -74,7 +83,8 @@ impl Session {
                 .json::<Vec<Element>>()
                 .await?;
 
-            res.into_iter()
+            let current_comments = res
+                .into_iter()
                 .filter_map(|e| e.chat)
                 .filter(|c| c.content.is_some())
                 .map(|c| Comment {
@@ -86,13 +96,18 @@ impl Session {
                     content: c.content.unwrap(),
                     mail: c.mail,
                 })
-                .for_each(|c| {
-                    comments.insert(c.no, c);
-                })
-        }
+                .collect::<Vec<_>>();
 
-        if comments.len() == 0 {
-            return Err(Error::NoComments);
+            on_progress(Context {
+                wayback: current,
+                total: wayback_len,
+                progress: index,
+                comments: &current_comments,
+            });
+
+            current_comments.into_iter().for_each(|c| {
+                comments.insert(c.no, c);
+            });
         }
 
         let mut comments: Vec<_> = comments.into_iter().map(|(_, c)| c).collect();

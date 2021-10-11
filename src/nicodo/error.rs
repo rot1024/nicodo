@@ -16,8 +16,6 @@ pub enum Error {
     NotAuthorized,
     #[error("serialization error")]
     Serialization,
-    #[error("no comments found")]
-    NoComments,
 }
 
 impl From<reqwest::Error> for Error {
