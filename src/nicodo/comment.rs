@@ -6,6 +6,8 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+const API_ENDPOINT: &'static str = "https://nvcomment.nicovideo.jp/legacy/api.json";
+
 #[derive(Debug, Deserialize)]
 struct Element {
     chat: Option<Chat>,
@@ -62,9 +64,10 @@ impl Session {
             });
 
             let res = reqwest::Client::new()
-                .post("https://nmsg.nicovideo.jp/api.json/")
+                .post(API_ENDPOINT)
                 .body(body)
                 .header(reqwest::header::CONTENT_TYPE, "text/plain;charset=UTF-8")
+                .timeout(Duration::from_secs(10))
                 .send()
                 .await?
                 .error_for_status()?
