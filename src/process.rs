@@ -13,6 +13,7 @@ pub struct Options {
     pub timespan: Timespan,
     pub format: Format,
     pub output: String,
+    pub delay: Option<u64>,
 }
 
 #[derive(Debug, Clone)]
@@ -145,7 +146,7 @@ async fn process_video(id: &str, opts: &Options) -> error::Result<()> {
     };
     let comments = opts
         .session
-        .get_comments(&info, &wayback, |ctx| {
+        .get_comments(&info, &wayback, opts.delay, |ctx| {
             if let Some(p) = progress.as_ref() {
                 if let Some(dt) = ctx.wayback {
                     p.set_length(ctx.total.try_into().unwrap());

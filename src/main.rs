@@ -57,6 +57,8 @@ struct Opts {
     dump_session_id: bool,
     #[clap(about = "Video ID, video URL, or channel URL")]
     ids: Vec<id::Id>,
+    #[clap(long, about = "Delay (seconds)")]
+    delay: Option<u64>,
 }
 
 impl Opts {
@@ -125,6 +127,7 @@ async fn main2() -> Result<()> {
         timespan: opts.timespan()?,
         format: opts.format,
         output: opts.output,
+        delay: opts.delay,
     };
 
     for item in opts.ids {

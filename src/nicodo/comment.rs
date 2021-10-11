@@ -5,6 +5,7 @@ use super::{
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, time::Duration};
+use tokio::time::sleep;
 
 const API_ENDPOINT: &'static str = "https://nvcomment.nicovideo.jp/legacy/api.json";
 
@@ -51,6 +52,7 @@ impl Session {
         &self,
         info: &Info,
         wayback: &Wayback,
+        delay: Option<u64>,
         on_progress: F,
     ) -> Result<Vec<Comment>> {
         let (threadkey, force_184) = self.get_threadkey(&info.client.watch_id).await?;
@@ -108,6 +110,11 @@ impl Session {
             current_comments.into_iter().for_each(|c| {
                 comments.insert(c.no, c);
             });
+
+            if let Some(d) = delay {
+                // avoid 429 Too Many Requests
+                sleep(Duration::from_secs(d)).await;
+            }
         }
 
         let mut comments: Vec<_> = comments.into_iter().map(|(_, c)| c).collect();
