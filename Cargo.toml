@@ -10,18 +10,18 @@ name = "nicodo"
 path = "src/main.rs"
 
 [dependencies]
-clap = "3.0.0-beta.1"
+clap = "3.0.0-beta.4"
 lazy_static = "1.4.0"
-quick-xml = "0.18.1"
-regex = "1.3.9"
-reqwest = { version = "0.10.6", features = ["json"] }
+quick-xml = "0.22.0"
+regex = "1.5.4"
+reqwest = { version = "0.11.5", features = ["json"] }
 scraper = "0.12.0"
-tokio = { version = "0.2.21", features = ["macros", "fs", "blocking"] }
-serde_json = "1.0.56"
-serde = { version = "1.0.114", features = ["derive"] }
-chrono = "0.4.11"
-dirs = "3.0.0"
-thiserror = "1.0.20"
+tokio = { version = "1.12.0", features = ["fs", "macros", "rt-multi-thread"] }
+serde_json = "1.0.68"
+serde = { version = "1.0.130", features = ["derive"] }
+chrono = "0.4.19"
+dirs = "4.0.0"
+thiserror = "1.0.30"
 confy = "0.4.0"
-derive_more = "0.99.9"
-dialoguer = "0.6.2"
+derive_more = "0.99.16"
+dialoguer = "0.8.0"

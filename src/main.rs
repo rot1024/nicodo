@@ -23,7 +23,7 @@ struct Opts {
     // email: String,
     // #[clap(long)]
     // password: String,
-    #[clap(short = "u", long, about = "user_session value in cookie")]
+    #[clap(short = 'u', long, about = "user_session value in cookie")]
     session: Option<String>,
     #[clap(short, long, default_value = "xml", about = "Format")]
     format: process::Format,
@@ -49,7 +49,7 @@ struct Opts {
     nosaveconfig: bool,
     #[clap(long = "reset", short, about = "Reset config")]
     reset_config: bool,
-    #[clap(short = "l", long = "latest", about = "Include latest comments")]
+    #[clap(short = 'l', long = "latest", about = "Include latest comments")]
     includes_latest: bool,
     #[clap(short, long, about = "Hide progress")]
     quiet: bool,
