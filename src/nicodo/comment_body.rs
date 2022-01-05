@@ -1,3 +1,5 @@
+use crate::nicodo::info::CommentThread;
+
 use super::Info;
 use serde::Serialize;
 
@@ -42,43 +44,111 @@ struct Thread {
     #[serde(skip_serializing_if = "Option::is_none")]
     waybackkey: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    when: Option<String>,
+    when: Option<i64>,
 }
 
 #[derive(Debug)]
 pub struct Options<'a, 'b, 'c, 'd> {
     pub info: &'a Info,
-    pub threadkey: &'b str,
-    pub waybackkey: &'c str,
-    pub force_184: &'d str,
-    pub counter_rs: usize,
-    pub counter_ps: usize,
-    pub wayback: Option<chrono::NaiveDateTime>,
+    // pub counter_rs: usize,
+    // pub counter_ps: usize,
+    pub wayback: Option<WaybackOptions<'b, 'c, 'd>>,
 }
 
-pub fn get_body(opts: Options) -> (String, usize, usize) {
-    let mut c = opts.counter_ps;
+#[derive(Debug)]
+pub struct WaybackOptions<'a, 'b, 'c> {
+    pub waybackkey: &'a str,
+    pub threadkey: &'b str,
+    pub force_184: &'c str,
+    pub wayback: chrono::NaiveDateTime,
+}
 
+pub fn get_body(opts: Options) -> String {
+    let rs = if opts.wayback.is_some() { 2 } else { 0 };
     let mut body: Vec<Element> = vec![Element::Ping(Ping {
-        content: format!("rs:{}", opts.counter_rs),
+        content: format!("rs:{}", rs),
     })];
+    let mut c = if opts.wayback.is_some() { 22 } else { 0 };
 
     let content = format!(
-        "0-{}:100,1000,nicoru:100",
+        "0-{}:{}",
         opts.info.video.duration / 60
             + (if opts.info.video.duration % 60 > 0 {
                 1
             } else {
                 0
-            })
+            }),
+        if opts.wayback.is_some() {
+            "0,1000" // 0:250
+        } else {
+            "100,1000,nicoru:100"
+        }
     );
+
+    let thread = |t: &CommentThread, leaf: bool| Thread {
+        thread: t.id.to_string(),
+        version: if !leaf {
+            if t.is_owner_thread {
+                Some("20061206".to_string())
+            } else {
+                Some("20090904".to_string())
+            }
+        } else {
+            None
+        },
+        language: 0,
+        fork: Some(t.fork),
+        user_id: opts.info.viewer.id.to_string(),
+        with_global: if leaf { None } else { Some(1) },
+        scores: 1,
+        nicoru: 3,
+        res_from: if t.is_owner_thread { Some(-1000) } else { None },
+        threadkey: if let Some(w) = opts.wayback.as_ref() {
+            Some(w.threadkey.to_string())
+        } else if t.is_thread_key_required {
+            t.thread_key.clone()
+        } else {
+            None
+        },
+        force_184: if let Some(w) = opts.wayback.as_ref() {
+            Some(w.force_184.to_string())
+        } else if t.is_184_forced.unwrap_or(false) {
+            Some("1".to_string())
+        } else {
+            None
+        },
+        content: if leaf {
+            Some(content.to_string())
+        } else {
+            None
+        },
+        userkey: if t.is_thread_key_required || opts.wayback.is_some() {
+            None
+        } else {
+            if let Some(_) = opts.wayback {
+                None
+            } else {
+                Some(opts.info.comment.keys.user_key.to_string())
+            }
+        },
+        waybackkey: if let Some(w) = opts.wayback.as_ref() {
+            Some(w.waybackkey.to_string())
+        } else {
+            None
+        },
+        when: if let Some(w) = opts.wayback.as_ref() {
+            Some(w.wayback.timestamp())
+        } else {
+            None
+        },
+    };
 
     body.extend(
         opts.info
             .comment
             .threads
             .iter()
-            .filter(|t| t.is_active)
+            .filter(|t| t.is_active && (!opts.wayback.is_some() || t.is_thread_key_required))
             .flat_map(|t| {
                 let mut threads: Vec<Element> = vec![];
 
@@ -86,51 +156,7 @@ pub fn get_body(opts: Options) -> (String, usize, usize) {
                     content: format!("ps:{}", c),
                 }));
 
-                threads.push(Element::Thread(Thread {
-                    thread: t.id.to_string(),
-                    version: if t.is_owner_thread {
-                        Some("20061206".to_string())
-                    } else {
-                        Some("20090904".to_string())
-                    },
-                    language: 0,
-                    fork: Some(t.fork),
-                    user_id: opts.info.viewer.id.to_string(),
-                    with_global: Some(1),
-                    scores: 1,
-                    nicoru: 3,
-                    res_from: if t.is_owner_thread { Some(-1000) } else { None },
-                    threadkey: if t.is_thread_key_required {
-                        Some(opts.threadkey.to_string())
-                    } else {
-                        None
-                    },
-                    force_184: if t.is_thread_key_required {
-                        Some(opts.force_184.to_string())
-                    } else {
-                        None
-                    },
-                    content: None,
-                    userkey: if t.is_thread_key_required {
-                        None
-                    } else {
-                        if let Some(_) = opts.wayback {
-                            None
-                        } else {
-                            Some(opts.info.comment.keys.user_key.to_string())
-                        }
-                    },
-                    waybackkey: if let Some(_) = opts.wayback {
-                        Some(opts.waybackkey.to_string())
-                    } else {
-                        None
-                    },
-                    when: if let Some(dt) = opts.wayback {
-                        Some(dt.timestamp().to_string())
-                    } else {
-                        None
-                    },
-                }));
+                threads.push(Element::Thread(thread(t, false)));
 
                 threads.push(Element::Ping(Ping {
                     content: format!("pf:{}", c),
@@ -143,47 +169,7 @@ pub fn get_body(opts: Options) -> (String, usize, usize) {
                         content: format!("ps:{}", c),
                     }));
 
-                    threads.push(Element::ThreadLeaves(Thread {
-                        thread: t.id.to_string(),
-                        version: None, // thread_leaves
-                        language: 0,
-                        fork: None, // thread_leaves
-                        user_id: opts.info.viewer.id.to_string(),
-                        with_global: None, // thread_leaves
-                        scores: 1,
-                        nicoru: 3,
-                        res_from: if t.is_owner_thread { Some(-1000) } else { None },
-                        threadkey: if t.is_thread_key_required {
-                            Some(opts.threadkey.to_string())
-                        } else {
-                            None
-                        },
-                        force_184: if t.is_thread_key_required {
-                            Some(opts.force_184.to_string())
-                        } else {
-                            None
-                        },
-                        content: Some(content.to_string()),
-                        userkey: if t.is_thread_key_required {
-                            None
-                        } else {
-                            if let Some(_) = opts.wayback {
-                                None
-                            } else {
-                                Some(opts.info.comment.keys.user_key.to_string())
-                            }
-                        },
-                        waybackkey: if let Some(_) = opts.wayback {
-                            Some(opts.waybackkey.to_string())
-                        } else {
-                            None
-                        },
-                        when: if let Some(dt) = opts.wayback {
-                            Some(dt.timestamp().to_string())
-                        } else {
-                            None
-                        },
-                    }));
+                    threads.push(Element::ThreadLeaves(thread(t, true)));
 
                     threads.push(Element::Ping(Ping {
                         content: format!("pf:{}", c),
@@ -196,12 +182,10 @@ pub fn get_body(opts: Options) -> (String, usize, usize) {
     );
 
     body.push(Element::Ping(Ping {
-        content: format!("rf:{}", opts.counter_rs),
+        content: format!("rf:{}", rs),
     }));
 
-    (
-        serde_json::to_string(&body).unwrap(),
-        opts.counter_ps + 1,
-        c,
-    )
+    let content = serde_json::to_string(&body).unwrap();
+
+    content
 }

@@ -1,6 +1,6 @@
 use super::{
-    comment_body::{get_body, Options},
-    Info, Result, Session, Wayback,
+    comment_body::{get_body, Options, WaybackOptions},
+    Error, Info, Result, Session, Wayback,
 };
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
@@ -55,23 +55,38 @@ impl Session {
         delay: Option<u64>,
         on_progress: F,
     ) -> Result<Vec<Comment>> {
-        let (threadkey, force_184) = self.get_threadkey(&info.client.watch_id).await?;
-        let waybackkey = self.get_waybackkey(&info.client.watch_id).await?;
+        let tid = match info.comment.thread_id() {
+            Some(tid) => tid,
+            None => return Err(Error::InvalidKey),
+        };
+
+        let wayback_info = if wayback.is_wayback() {
+            let (threadkey, force_184) = self.get_thread_key(&tid).await?;
+            let waybackkey = self.get_waybackkey(&tid).await?;
+            Some((threadkey, force_184, waybackkey))
+        } else {
+            None
+        };
 
         let mut comments: HashMap<usize, Comment> = HashMap::new();
-
         let wayback_iter = wayback.iter();
         let wayback_len = wayback_iter.len();
 
         for (index, current) in wayback_iter.enumerate() {
-            let (body, _counter_rs, _counter_ps) = get_body(Options {
+            let body = get_body(Options {
                 info,
-                threadkey: &threadkey,
-                waybackkey: &waybackkey,
-                force_184: &force_184,
-                counter_rs: 0,
-                counter_ps: 0,
-                wayback: current,
+                wayback: current.and_then(|c| {
+                    if let Some((threadkey, force_184, waybackkey)) = wayback_info.as_ref() {
+                        Some(WaybackOptions {
+                            force_184,
+                            threadkey,
+                            waybackkey,
+                            wayback: c,
+                        })
+                    } else {
+                        None
+                    }
+                }),
             });
 
             let res = reqwest::Client::new()

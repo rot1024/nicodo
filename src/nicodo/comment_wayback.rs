@@ -23,6 +23,14 @@ impl Wayback {
             latest: false,
         }
     }
+
+    pub fn is_wayback(&self) -> bool {
+        if let Self::Latest = self {
+            false
+        } else {
+            true
+        }
+    }
 }
 
 impl IntoIterator for Wayback {

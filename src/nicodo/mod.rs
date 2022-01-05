@@ -1,7 +1,6 @@
 mod channel;
 mod comment;
 mod comment_body;
-mod comment_key;
 mod comment_wayback;
 mod error;
 mod info;

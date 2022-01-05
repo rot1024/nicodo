@@ -27,6 +27,15 @@ pub struct Comment {
     pub threads: Vec<CommentThread>,
 }
 
+impl Comment {
+    pub fn thread_id<'a>(&'a self) -> Option<String> {
+        self.threads
+            .iter()
+            .find(|t| t.is_thread_key_required)
+            .map(|t| t.id.to_string())
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CommentKeys {
     #[serde(rename = "userKey")]
@@ -47,6 +56,10 @@ pub struct CommentThread {
     pub is_leaf_required: bool,
     #[serde(rename = "isOwnerThread")]
     pub is_owner_thread: bool,
+    #[serde(rename = "threadkey")]
+    pub thread_key: Option<String>,
+    #[serde(rename = "is184Forced")]
+    pub is_184_forced: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
