@@ -1,4 +1,4 @@
-use clap::Clap;
+use clap::Parser;
 use dialoguer::Input;
 use error::{Error, Result};
 use std::process::exit;
@@ -17,48 +17,54 @@ async fn main() {
     }
 }
 
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
+#[clap(about, version, author)]
 struct Opts {
     // #[clap(long)]
     // email: String,
     // #[clap(long)]
     // password: String,
-    #[clap(short = 'u', long, about = "user_session value in cookie")]
+    /// user_session value in cookie
+    #[clap(short = 'u', long)]
     session: Option<String>,
-    #[clap(short, long, default_value = "xml", about = "Format")]
+    /// Format
+    #[clap(short, long, default_value = "xml")]
     format: process::Format,
-    #[clap(short, long, about = "Output directory path", default_value = ".")]
+    /// Output directory path
+    #[clap(short, long, default_value = ".")]
     output: String,
-    #[clap(short, long, about = "Date: 2019-01-01, 2019-01-01 12:00:00")]
+    /// Date: 2019-01-01, 2019-01-01 12:00:00
+    #[clap(short, long)]
     date: Option<datetime::DateTime>,
-    #[clap(
-        short,
-        long,
-        about = "Period start: 2019-01-01, 2019-01-01 12:00:00, posted, posted+1d, posted+1w"
-    )]
+    /// Period start: 2019-01-01, 2019-01-01 12:00:00, posted, posted+1d, posted+1w
+    #[clap(short, long)]
     start: Option<datetime::DateTime>,
-    #[clap(
-        short,
-        long,
-        about = "Period end: 2019-01-01, 2019-01-01 12:00:00, latest, posted+1d, posted+1w"
-    )]
+    /// Period end: 2019-01-01, 2019-01-01 12:00:00, latest, posted+1d, posted+1w
+    #[clap(short, long)]
     end: Option<datetime::DateTime>,
-    #[clap(short, long, about = "Interval: 1h, 1d")]
+    /// Interval: 1h, 1d
+    #[clap(short, long)]
     interval: Option<datetime::Duration>,
-    #[clap(long = "nosave", about = "Config file won't be saved")]
+    /// Config file won't be saved
+    #[clap(long = "nosave")]
     nosaveconfig: bool,
-    #[clap(long = "reset", short, about = "Reset config")]
+    /// Reset config
+    #[clap(long = "reset", short)]
     reset_config: bool,
-    #[clap(short = 'l', long = "latest", about = "Include latest comments")]
+    /// Include latest comments
+    #[clap(short = 'l', long = "latest")]
     includes_latest: bool,
-    #[clap(short, long, about = "Hide progress")]
+    /// Hide progress
+    #[clap(short, long)]
     quiet: bool,
-    #[clap(long, about = "Dump session ID")]
+    /// Dump session ID
+    #[clap(long)]
     dump_session_id: bool,
-    #[clap(about = "Video ID, video URL, or channel URL")]
-    ids: Vec<id::Id>,
-    #[clap(long, about = "Delay (seconds)", default_value = "1")]
+    /// Delay (seconds)
+    #[clap(long, default_value = "1")]
     delay: u64,
+    /// Video ID, video URL, or channel URL
+    ids: Vec<id::Id>,
 }
 
 impl Opts {
