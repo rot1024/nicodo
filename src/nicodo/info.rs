@@ -31,8 +31,16 @@ impl Comment {
     pub fn thread_id<'a>(&'a self) -> Option<String> {
         self.threads
             .iter()
-            .find(|t| t.is_thread_key_required)
+            .find(|t| t.is_default_post_target)
             .map(|t| t.id.to_string())
+    }
+
+    pub fn is_thread_key_required<'a>(&'a self) -> bool {
+        self.threads.iter().all(|t| t.is_thread_key_required)
+    }
+
+    pub fn thread_key_required_thread<'a>(&'a self) -> Option<&CommentThread> {
+        self.threads.iter().find(|t| t.is_thread_key_required)
     }
 }
 
