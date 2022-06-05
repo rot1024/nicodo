@@ -79,27 +79,30 @@ impl Session {
         let wayback_len = wayback_iter.len();
 
         for (index, current) in wayback_iter.enumerate() {
-            let body = get_body(Options {
-                info,
-                wayback: current.and_then(|c| {
-                    if let Some(waybackkey) = waybackkey.as_ref() {
-                        Some(WaybackOptions {
-                            waybackkey,
-                            wayback: c,
+            let body = get_body(
+                Options {
+                    info,
+                    wayback: current.and_then(|c| {
+                        if let Some(waybackkey) = waybackkey.as_ref() {
+                            Some(WaybackOptions {
+                                waybackkey,
+                                wayback: c,
+                            })
+                        } else {
+                            None
+                        }
+                    }),
+                    official: if let Some((threadkey, force_184)) = official_info.as_ref() {
+                        Some(OfficialOptions {
+                            threadkey,
+                            force_184,
                         })
                     } else {
                         None
-                    }
-                }),
-                official: if let Some((threadkey, force_184)) = official_info.as_ref() {
-                    Some(OfficialOptions {
-                        threadkey,
-                        force_184,
-                    })
-                } else {
-                    None
+                    },
                 },
-            });
+                wayback,
+            );
 
             let res = reqwest::Client::new()
                 .post(API_ENDPOINT)

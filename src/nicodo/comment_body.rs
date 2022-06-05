@@ -1,4 +1,4 @@
-use crate::nicodo::info::CommentThread;
+use crate::{nicodo::info::CommentThread, Wayback};
 
 use super::Info;
 use serde::Serialize;
@@ -68,7 +68,7 @@ pub struct OfficialOptions<'a, 'b> {
     pub force_184: &'b str,
 }
 
-pub fn get_body(opts: Options) -> String {
+pub fn get_body(opts: Options, wayback: &Wayback) -> String {
     let rs = if opts.wayback.is_some() { 2 } else { 0 };
     let mut body: Vec<Element> = vec![Element::Ping(Ping {
         content: format!("rs:{}", rs),
@@ -153,7 +153,12 @@ pub fn get_body(opts: Options) -> String {
             .comment
             .threads
             .iter()
-            .filter(|t| t.is_active && (!opts.wayback.is_some() || t.is_thread_key_required))
+            .filter(|t| {
+                t.is_active
+                    && ((!wayback.is_wayback() && !opts.wayback.is_some())
+                        || (wayback.is_wayback() && opts.wayback.is_some())
+                        || t.is_thread_key_required)
+            })
             .flat_map(|t| {
                 let mut threads: Vec<Element> = vec![];
 
