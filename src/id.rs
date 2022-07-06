@@ -13,10 +13,15 @@ impl FromStr for Id {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         lazy_static! {
-            static ref RE: Regex = Regex::new("https://ch.nicovideo.jp/(.+)").unwrap();
+            static ref RE: Regex = Regex::new(r"https://ch.nicovideo.jp/(.+?)(?:\?|$)").unwrap();
+            static ref RE2: Regex = Regex::new(r"https://www.nicovideo.jp/series/(.+?)(?:\?|$)").unwrap();
         }
 
         if let Some(c) = RE.captures(s).and_then(|c| c.get(1)) {
+            return Ok(Self::Channel(c.as_str().to_string()));
+        }
+
+        if let Some(c) = RE2.captures(s).and_then(|c| c.get(1)) {
             return Ok(Self::Channel(c.as_str().to_string()));
         }
 
@@ -35,6 +40,14 @@ fn test_id_parse() {
     );
     assert_eq!(
         "https://ch.nicovideo.jp/zzz".parse::<Id>().unwrap(),
+        Id::Channel("zzz".to_string())
+    );
+    assert_eq!(
+        "https://www.nicovideo.jp/series/zzz".parse::<Id>().unwrap(),
+        Id::Channel("zzz".to_string())
+    );
+    assert_eq!(
+        "https://www.nicovideo.jp/series/zzz?aaa".parse::<Id>().unwrap(),
         Id::Channel("zzz".to_string())
     );
 }
