@@ -1,4 +1,4 @@
-use crate::nicodo::info::CommentThread;
+use crate::{nicodo::info::CommentThread, Wayback};
 
 use super::Info;
 use serde::Serialize;
@@ -52,18 +52,23 @@ pub struct Options<'a, 'b, 'c, 'd> {
     pub info: &'a Info,
     // pub counter_rs: usize,
     // pub counter_ps: usize,
-    pub wayback: Option<WaybackOptions<'b, 'c, 'd>>,
+    pub wayback: Option<WaybackOptions<'b>>,
+    pub official: Option<OfficialOptions<'c, 'd>>,
 }
 
 #[derive(Debug)]
-pub struct WaybackOptions<'a, 'b, 'c> {
+pub struct WaybackOptions<'a> {
     pub waybackkey: &'a str,
-    pub threadkey: &'b str,
-    pub force_184: &'c str,
     pub wayback: chrono::NaiveDateTime,
 }
 
-pub fn get_body(opts: Options) -> String {
+#[derive(Debug)]
+pub struct OfficialOptions<'a, 'b> {
+    pub threadkey: &'a str,
+    pub force_184: &'b str,
+}
+
+pub fn get_body(opts: Options, wayback: &Wayback) -> String {
     let rs = if opts.wayback.is_some() { 2 } else { 0 };
     let mut body: Vec<Element> = vec![Element::Ping(Ping {
         content: format!("rs:{}", rs),
@@ -103,14 +108,14 @@ pub fn get_body(opts: Options) -> String {
         scores: 1,
         nicoru: 3,
         res_from: if t.is_owner_thread { Some(-1000) } else { None },
-        threadkey: if let Some(w) = opts.wayback.as_ref() {
+        threadkey: if let Some(w) = opts.official.as_ref() {
             Some(w.threadkey.to_string())
         } else if t.is_thread_key_required {
             t.thread_key.clone()
         } else {
             None
         },
-        force_184: if let Some(w) = opts.wayback.as_ref() {
+        force_184: if let Some(w) = opts.official.as_ref() {
             Some(w.force_184.to_string())
         } else if t.is_184_forced.unwrap_or(false) {
             Some("1".to_string())
@@ -148,7 +153,12 @@ pub fn get_body(opts: Options) -> String {
             .comment
             .threads
             .iter()
-            .filter(|t| t.is_active && (!opts.wayback.is_some() || t.is_thread_key_required))
+            .filter(|t| {
+                t.is_active
+                    && ((!wayback.is_wayback() && !opts.wayback.is_some())
+                        || (wayback.is_wayback() && opts.wayback.is_some())
+                        || t.is_thread_key_required)
+            })
             .flat_map(|t| {
                 let mut threads: Vec<Element> = vec![];
 

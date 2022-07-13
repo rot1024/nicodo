@@ -1,5 +1,5 @@
 use super::{
-    comment_body::{get_body, Options, WaybackOptions},
+    comment_body::{get_body, OfficialOptions, Options, WaybackOptions},
     Error, Info, Result, Session, Wayback,
 };
 use chrono::NaiveDateTime;
@@ -59,11 +59,17 @@ impl Session {
             Some(tid) => tid,
             None => return Err(Error::InvalidKey),
         };
+        let official_info = if let Some(t) = info.comment.thread_key_required_thread() {
+            Some((
+                t.thread_key.as_ref().expect(""),
+                if t.is_184_forced.expect("") { "1" } else { "0" },
+            ))
+        } else {
+            None
+        };
 
-        let wayback_info = if wayback.is_wayback() {
-            let (threadkey, force_184) = self.get_thread_key(&tid).await?;
-            let waybackkey = self.get_waybackkey(&tid).await?;
-            Some((threadkey, force_184, waybackkey))
+        let waybackkey = if wayback.is_wayback() {
+            Some(self.get_waybackkey(&tid).await?)
         } else {
             None
         };
@@ -73,21 +79,30 @@ impl Session {
         let wayback_len = wayback_iter.len();
 
         for (index, current) in wayback_iter.enumerate() {
-            let body = get_body(Options {
-                info,
-                wayback: current.and_then(|c| {
-                    if let Some((threadkey, force_184, waybackkey)) = wayback_info.as_ref() {
-                        Some(WaybackOptions {
-                            force_184,
+            let body = get_body(
+                Options {
+                    info,
+                    wayback: current.and_then(|c| {
+                        if let Some(waybackkey) = waybackkey.as_ref() {
+                            Some(WaybackOptions {
+                                waybackkey,
+                                wayback: c,
+                            })
+                        } else {
+                            None
+                        }
+                    }),
+                    official: if let Some((threadkey, force_184)) = official_info.as_ref() {
+                        Some(OfficialOptions {
                             threadkey,
-                            waybackkey,
-                            wayback: c,
+                            force_184,
                         })
                     } else {
                         None
-                    }
-                }),
-            });
+                    },
+                },
+                wayback,
+            );
 
             let res = reqwest::Client::new()
                 .post(API_ENDPOINT)
